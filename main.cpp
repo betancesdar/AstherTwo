@@ -13,6 +13,8 @@
 #include <list>
 #include <iostream>
 
+
+
 using namespace std;
 
 #define UP 72
@@ -225,6 +227,143 @@ bool BULLET::out() {
 	return false;
 }
 
+
+class Game {
+private:
+	list<AST*> asteroids;
+	list<BULLET*> bullets; 
+	int points; 
+
+public:
+	Game() : points(0) {}
+	~Game();
+	void start();
+	void drawGameInfo();
+};
+
+Game::~Game() {
+	for (auto& asteroid : asteroids) {
+		delete asteroid;
+	}
+
+	asteroids.clear();
+
+	//Liberar memoria de las balas
+
+	for (auto& bullet : bullets) {
+		delete bullet;
+	}
+
+	bullets.clear();
+
+}
+
+void Game::drawGameInfo() {}
+
+void Game::start() {
+		draw_limit();
+		PlayGameMusic();
+		SHIP N(37, 30, 3, 3);
+		N.draw();
+		N.draw_heart();
+
+		list<AST*> A;
+		list<AST*>::iterator itA;
+		for (int i = 0; i < 5; i++) {
+			A.push_back(new AST(rand() % 75 + 3, rand() % 5 + 4));
+		}
+
+		list<BULLET*> B;
+		list<BULLET*>::iterator it;
+
+		bool game_over = false;
+		int points = 0;
+
+		while (!game_over) {
+			gotoxy(4, 2); printf("Points %d", points);
+			if (_kbhit()) {
+
+				char key = _getch();
+				if (key == SHOOT_KEY)
+					B.push_back(new BULLET(N.X() + 2, N.Y() - 1));
+			}
+			for (it = B.begin(); it != B.end();) {
+				(*it)->move();
+				if ((*it)->out()) {
+					gotoxy((*it)->X(), (*it)->Y()); printf(" ");
+					delete(*it); //el it se invalida son casillas se una con otra pierde el hi
+					it = B.erase(it);
+				}
+				else {
+					++it;
+				}
+			}
+
+			for (itA = A.begin(); itA != A.end();itA++)
+			{
+				(*itA)->move();
+				(*itA)->crash(N);
+			}
+
+
+			/*for (itA = A.begin(); itA != A.end(); itA++) {
+				//Logic is loop into the Ast check the position and compare with the bullet position
+				for (it = B.begin(); it != B.end(); it++) {
+					if ((*itA)->X() == (*it)->X() && ((*itA)->Y() + 1 == (*it)->Y() || (*itA)->Y() == (*it)->Y())) {
+						gotoxy((*it)->X(), (*it)->Y()); printf(" ");
+						delete(*it);
+						it = B.erase(it);
+
+						//Borrar el asteroides y remplazarlo con otro que aparezca hasta el inicio 
+						A.push_back(new AST(rand() % 74 + 3, 4));
+						gotoxy((*itA)->X(), (*itA)->Y()); printf(" ");
+						delete(*itA);
+						itA = A.erase(itA);
+						points += 5;
+					}
+				}
+
+			}*/
+
+			for (itA = A.begin(); itA != A.end();) {
+
+				bool asteroidRemoved = false;
+
+				for (it = B.begin(); it != B.end();) {
+					if ((*itA)->X() == (*it)->X() && ((*itA)->Y() + 1 == (*it)->Y() || (*itA)->Y() == (*it)->Y())) {
+						gotoxy((*it)->X(), (*it)->Y()); printf(" ");
+						delete(*it);
+						it = B.erase(it);
+
+						A.push_back(new AST(rand() % 74 + 3, 4));
+						gotoxy((*itA)->X(), (*itA)->Y()); printf(" ");
+						delete(*itA);
+						itA = A.erase(itA);
+						asteroidRemoved = true;
+						points += 5;
+
+
+						break;
+					}
+					else {
+						++it;
+					}
+				}
+
+				if (!asteroidRemoved) {
+					++itA;
+				}
+			}
+
+			if (N.LIV() == 0) game_over = true;
+
+			N.lose();
+			N.move();
+			Sleep(30);
+		}
+	
+}
+
 int menu() {
 	int choice = 1;  // 1 para "Start", 2 para "Exit"
 	int key;
@@ -256,92 +395,42 @@ int menu() {
 	}
 }
 
-int main() {
-	HideCursor();
-	draw_limit();
 
-	printf("\n\n\t\t\t AstherTwo - The vengace\n\n");
-	printf("\t\t\t 1. Start\n");
-	printf("\t\t\t 2. Exit\n");
-	PlayStartMusic();
+void draw_title() {
+	system("cls");  // Limpiar la pantalla
+
+	// Caracteres para formar el título AstherTwo - THE VENGACE
+	std::cout << R"(
+  ____ _ _     _     _______ _           _     
+ / __ (_) |   | |   |__   __| |         | |    
+| |  | |_| |_  | |_ _   _| | |__   __ _| |__  
+| |  | | | __| | __| | | | | '_ \ / _` | '_ \ 
+| |__| | | |_  | |_| |_| | | | | | (_| | | | |
+ \____/|_|\__|  \__|\__, |_|_| |_|\__,_|_| |_|
+                    __/ |                      
+                   |___/                       
+)" << std::endl << std::endl;
+}
+
+
+int main() {
+	//Configurations 
+	HideCursor();
+
+	draw_title();
+
 
 	int choice = menu();
-	
 
-	switch (choice)
-	{
+	switch (choice) {
 	case 1: {
-		PlayGameMusic();
-		SHIP N(37, 30, 3, 3);
-		N.draw();
-		N.draw_heart();
-
-		list<AST*> A;
-		list<AST*>::iterator itA;
-		for (int i = 0; i < 5; i++) {
-			A.push_back(new AST(rand() % 75 + 3, rand() % 5 + 4));
-		}
-
-		list<BULLET*> B; 
-		list<BULLET*>::iterator it;
-
-		bool game_over = false;
-		int points = 0;
-		while (!game_over) {
-			gotoxy(4, 2); printf("Puntos %d", points);
-			if (_kbhit()) {
-			
-				char key = _getch();
-				if (key == SHOOT_KEY) 
-					B.push_back(new BULLET(N.X() + 2, N.Y() - 1));
-			}
-			for (it = B.begin(); it != B.end();) {
-				(*it)->move();
-				if ((*it)->out()){
-					gotoxy((*it)->X(), (*it)->Y()); printf(" ");
-					delete(*it); //el it se invalida son casillas se una con otra pierde el hi
-					it = B.erase(it);
-				}
-				else {
-					++it;
-				}
-			}
-
-			for (itA = A.begin(); itA != A.end();itA++)
-			{
-				(*itA)->move();
-				(*itA)->crash(N);
-			}
-
-			for (itA = A.begin(); itA != A.end(); itA++) {
-				//Logic is loop into the Ast check the position and compare with the bullet position
-				for (it = B.begin(); it != B.end(); it++) {
-					if ((*itA)->X() == (*it)->X() && ((*itA)->Y() + 1 == (*it)->Y() || (*itA)->Y() == (*it)->Y())) {
-						gotoxy((*it)->X(), (*it)->Y()); printf(" ");
-						delete(*it);
-						it = B.erase(it);
-
-						//Borrar el asteroides y remplazarlo con otro que aparezca hasta el inicio 
-						A.push_back(new AST(rand() % 74 + 3, 4));
-						gotoxy((*itA)->X(), (*itA)->Y()); printf(" ");
-						delete(*itA);
-						itA = A.erase(itA);
-						points += 5;
-					}
-				}
-			
-			}
-			if (N.LIV() == 0) game_over = true;
-
-			N.lose();
-			N.move();
-			Sleep(30);
-		}
+		Game game;
+		
+		game.start();
 		break;
 	}
 	case 2:
 		break;
-
 	default:
 		printf("Invalid choice\n");
 		break;
