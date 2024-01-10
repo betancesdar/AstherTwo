@@ -3,7 +3,7 @@
 	Year: 2024,
 	Version: 1.1,
 	Language: C++,
-	Credits: 
+	Credits: {}
 */
 #include <stdio.h>
 #include <Windows.h>
@@ -11,6 +11,8 @@
 #include <mmsystem.h>
 #include <stdlib.h>
 #include <list>
+#include <iostream>
+
 using namespace std;
 
 #define UP 72
@@ -68,6 +70,7 @@ public:
 	SHIP(int _x, int _y, int _hearts, int _lives) : x(_x), y(_y), hearts(_hearts), lives(_lives) {}
 	int X() { return x; }
 	int Y() { return y; }
+	int LIV() { return lives; }
 	void HER() { hearts--; }
 	void draw();
 	void remove();
@@ -78,9 +81,9 @@ public:
 };
 
 void SHIP::draw() {
-	gotoxy(x, y);	  printf("  T  ");
-	gotoxy(x, y + 1); printf("->*<-");
-	gotoxy(x, y + 2); printf("*****");
+	gotoxy(x, y);     printf("  /\\  ");
+	gotoxy(x, y + 1); printf(" /  \\");
+	gotoxy(x, y + 2); printf("/_/\\_\\");
 }
 
 void SHIP::remove() {
@@ -115,14 +118,6 @@ void SHIP::move() {
 		}
 
 	}*/
-}
-
-/*void SHIP::shoot() {
-	bullets.push_back(std::make_pair(x + 2, y - 1));
-}*/
-
-void clearScreen() {
-	system("cls");
 }
 
 void SHIP::draw_heart() {
@@ -164,10 +159,12 @@ public:
 	AST(int _x, int _y) : x(_x), y(_y) {}
 	void draw();
 	void move();
-	void crash(class SHIP& N); //Buenas practicas al utilizar la memoria heap quitarle el tipo a la clase o estructura 
-};
+	void crash(class SHIP& N); //Buenas practicas al utilizar la memoria heap quitarle el tipo a la clase o estructura
+	int X() { return x; } //Getter 
+	int Y() { return y; }
 
-//Heap
+	
+};
 
 void AST::draw() {
 	gotoxy(x, y); printf("%c", 199);
@@ -210,14 +207,53 @@ class BULLET {
 	int x, y;
 public:
 	BULLET(int _x, int _y) : x(_x), y(_y) {}
+	int X() { return x; }
+	int Y() { return y; }
 	void move();
+	bool out();
 };
 
 void BULLET::move() {
 	gotoxy(x,y); printf(" ");
-	if (y > 4) y--;
+	y--;
 	gotoxy(x, y); printf("^");
 
+}
+
+bool BULLET::out() {
+	if (y == 4) return true;
+	return false;
+}
+
+int menu() {
+	int choice = 1;  // 1 para "Start", 2 para "Exit"
+	int key;
+
+	while (true) {
+		// Mostrar opciones de menú y resaltar la opción actual
+		std::cout << "\t\t\t";
+		if (choice == 1) std::cout << "> ";
+		std::cout << "1. Start" << std::endl;
+
+		std::cout << "\t\t\t";
+		if (choice == 2) std::cout << "> ";
+		std::cout << "2. Exit" << std::endl;
+
+		key = _getch();  // Leer la tecla sin esperar la pulsación de Enter
+
+		switch (key) {
+		case UP:
+			if (choice > 1) choice--;
+			break;
+		case DOWN:
+			if (choice < 2) choice++;
+			break;
+		case 13:  // Tecla Enter
+			return choice;
+		default:
+			break;
+		}
+	}
 }
 
 int main() {
@@ -229,44 +265,76 @@ int main() {
 	printf("\t\t\t 2. Exit\n");
 	PlayStartMusic();
 
-	int choice;
-	scanf_s("%d", &choice);
+	int choice = menu();
+	
 
 	switch (choice)
 	{
 	case 1: {
 		PlayGameMusic();
-		SHIP n(7, 7, 3, 3);
-		n.draw();
-		n.draw_heart();
+		SHIP N(37, 30, 3, 3);
+		N.draw();
+		N.draw_heart();
 
-		AST ast(10, 4), ast2(4, 8), ast3(10, 15);
+		list<AST*> A;
+		list<AST*>::iterator itA;
+		for (int i = 0; i < 5; i++) {
+			A.push_back(new AST(rand() % 75 + 3, rand() % 5 + 4));
+		}
 
 		list<BULLET*> B; 
 		list<BULLET*>::iterator it;
 
 		bool game_over = false;
-
+		int points = 0;
 		while (!game_over) {
-
+			gotoxy(4, 2); printf("Puntos %d", points);
 			if (_kbhit()) {
 			
 				char key = _getch();
-				if (key == SHOOT_KEY) {
-					B.push_back(new BULLET(n.X() + 2, n.Y() - 1));
+				if (key == SHOOT_KEY) 
+					B.push_back(new BULLET(N.X() + 2, N.Y() - 1));
+			}
+			for (it = B.begin(); it != B.end();) {
+				(*it)->move();
+				if ((*it)->out()){
+					gotoxy((*it)->X(), (*it)->Y()); printf(" ");
+					delete(*it); //el it se invalida son casillas se una con otra pierde el hi
+					it = B.erase(it);
+				}
+				else {
+					++it;
 				}
 			}
 
-			for (it = B.begin(); it != B.end(); it++ ) {
-				(*it)->move(); //desferencia puntero puntero es la dirrecion
+			for (itA = A.begin(); itA != A.end();itA++)
+			{
+				(*itA)->move();
+				(*itA)->crash(N);
 			}
 
-			ast.move(); ast.crash(n);
-			ast2.move(); ast2.crash(n);
-			ast3.move(); ast3.crash(n);
+			for (itA = A.begin(); itA != A.end(); itA++) {
+				//Logic is loop into the Ast check the position and compare with the bullet position
+				for (it = B.begin(); it != B.end(); it++) {
+					if ((*itA)->X() == (*it)->X() && ((*itA)->Y() + 1 == (*it)->Y() || (*itA)->Y() == (*it)->Y())) {
+						gotoxy((*it)->X(), (*it)->Y()); printf(" ");
+						delete(*it);
+						it = B.erase(it);
 
-			n.lose();
-			n.move();
+						//Borrar el asteroides y remplazarlo con otro que aparezca hasta el inicio 
+						A.push_back(new AST(rand() % 74 + 3, 4));
+						gotoxy((*itA)->X(), (*itA)->Y()); printf(" ");
+						delete(*itA);
+						itA = A.erase(itA);
+						points += 5;
+					}
+				}
+			
+			}
+			if (N.LIV() == 0) game_over = true;
+
+			N.lose();
+			N.move();
 			Sleep(30);
 		}
 		break;
