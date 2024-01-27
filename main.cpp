@@ -13,8 +13,6 @@
 #include <list>
 #include <iostream>
 
-
-
 using namespace std;
 
 #define UP 72
@@ -105,21 +103,6 @@ void SHIP::move() {
 		draw();
 	}
 
-	/*for (size_t i = 0; i < bullets.size(); ++i) {
-		gotoxy(bullets[i].first, bullets[i].second);
-		printf(" ");
-		bullets[i].second--;
-
-		if (bullets[i].second <= 0) {
-			bullets.erase(bullets.begin() + i);
-			i--;
-		}
-		else {
-			gotoxy(bullets[i].first, bullets[i].second);
-			printf("^");
-		}
-
-	}*/
 }
 
 void SHIP::draw_heart() {
@@ -169,7 +152,7 @@ public:
 };
 
 void AST::draw() {
-	gotoxy(x, y); printf("%c", 199);
+	gotoxy(x, y); printf("0");
 }
 
 void AST::move() {
@@ -258,9 +241,12 @@ Game::~Game() {
 
 }
 
-void Game::drawGameInfo() {}
+void clearScreen() {
+	system("cls");
+}
 
 void Game::start() {
+		clearScreen();
 		draw_limit();
 		PlayGameMusic();
 		SHIP N(37, 30, 3, 3);
@@ -306,25 +292,6 @@ void Game::start() {
 			}
 
 
-			/*for (itA = A.begin(); itA != A.end(); itA++) {
-				//Logic is loop into the Ast check the position and compare with the bullet position
-				for (it = B.begin(); it != B.end(); it++) {
-					if ((*itA)->X() == (*it)->X() && ((*itA)->Y() + 1 == (*it)->Y() || (*itA)->Y() == (*it)->Y())) {
-						gotoxy((*it)->X(), (*it)->Y()); printf(" ");
-						delete(*it);
-						it = B.erase(it);
-
-						//Borrar el asteroides y remplazarlo con otro que aparezca hasta el inicio 
-						A.push_back(new AST(rand() % 74 + 3, 4));
-						gotoxy((*itA)->X(), (*itA)->Y()); printf(" ");
-						delete(*itA);
-						itA = A.erase(itA);
-						points += 5;
-					}
-				}
-
-			}*/
-
 			for (itA = A.begin(); itA != A.end();) {
 
 				bool asteroidRemoved = false;
@@ -364,38 +331,6 @@ void Game::start() {
 	
 }
 
-int menu() {
-	int choice = 1;  // 1 para "Start", 2 para "Exit"
-	int key;
-
-	while (true) {
-		// Mostrar opciones de menú y resaltar la opción actual
-		std::cout << "\t\t\t";
-		if (choice == 1) std::cout << "> ";
-		std::cout << "1. Start" << std::endl;
-
-		std::cout << "\t\t\t";
-		if (choice == 2) std::cout << "> ";
-		std::cout << "2. Exit" << std::endl;
-
-		key = _getch();  // Leer la tecla sin esperar la pulsación de Enter
-
-		switch (key) {
-		case UP:
-			if (choice > 1) choice--;
-			break;
-		case DOWN:
-			if (choice < 2) choice++;
-			break;
-		case 13:  // Tecla Enter
-			return choice;
-		default:
-			break;
-		}
-	}
-}
-
-
 void draw_title() {
 	system("cls");  // Limpiar la pantalla
 
@@ -412,20 +347,51 @@ void draw_title() {
 )" << std::endl << std::endl;
 }
 
+int menu() {
+	int choice = 1;  // 1 para "Start", 2 para "Exit"
+	int key;
+
+	while (true) {
+		system("cls");  // Limpiar la pantalla
+		draw_title();
+
+		// Mostrar opciones de menú y resaltar la opción actual
+		std::cout << "\t\t\t";
+		if (choice == 1) std::cout << "> ";
+		std::cout << "1. Start" << std::endl;
+
+		std::cout << "\t\t\t";
+		if (choice == 2) std::cout << "> ";
+		std::cout << "2. Exit" << std::endl;
+
+		key = _getch();  // Leer la tecla sin esperar la pulsación de Enter
+
+		switch (key) {
+		case 224:  // Tecla de flecha (extensión)
+			key = _getch();  // Leer la tecla de flecha real
+			if (key == UP && choice > 1) choice--;
+			else if (key == DOWN && choice < 2) choice++;
+			break;
+		case 13:  // Tecla Enter
+			return choice;
+		default:
+			break;
+		}
+	}
+}
+
 
 int main() {
 	//Configurations 
 	HideCursor();
-
 	draw_title();
-
 
 	int choice = menu();
 
 	switch (choice) {
 	case 1: {
+		clearScreen();
 		Game game;
-		
 		game.start();
 		break;
 	}
